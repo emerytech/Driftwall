@@ -14,8 +14,17 @@ final class WallpaperController {
     private(set) var isPaused = false          // manual pause
     private var onBattery = false
 
-    enum SourceMode: String { case single, playlist }
+    enum SourceMode: String { case single, playlist, schedule }
     struct DisplaySource: Codable { var kind: String; var path: String }  // kind: single|playlist
+
+    /// One time-of-day slot. `start` is minutes since midnight (0..1439).
+    /// `light`/`dark` are the sources for the system's Light/Dark
+    /// appearance; if only one is set it's used for both.
+    struct ScheduleSlot: Codable {
+        var start: Int
+        var light: DisplaySource?
+        var dark: DisplaySource?
+    }
 
     enum Key {
         static let video = "DriftwallVideoURL"
@@ -32,6 +41,7 @@ final class WallpaperController {
         static let reduceMotion = "DriftwallRespectReduceMotion"
         static let fullscreen = "DriftwallPauseOnFullscreen"
         static let displays = "DriftwallDisplayMap"
+        static let schedule = "DriftwallSchedule"
     }
 
     private static let videoExts: Set<String> = ["mp4", "mov", "m4v", "webm", "mkv", "avi"]
@@ -39,8 +49,10 @@ final class WallpaperController {
     var sourceMode: SourceMode {
         didSet {
             UserDefaults.standard.set(sourceMode.rawValue, forKey: Key.mode)
+            currentScheduleKey = scheduleSelectionKey()
             applySourceToViews()
             updatePlayback()
+            updateScheduleTimer()
         }
     }
     var pauseOnBattery: Bool {
@@ -89,11 +101,19 @@ final class WallpaperController {
     private let power = PowerMonitor()
     private let fullscreen = FullscreenMonitor()
     private var fullscreenCovered = false
+    private var schedule: [ScheduleSlot] = []
+    private var scheduleTimer: Timer?
+    private var currentScheduleKey = ""
 
     var videoURL: URL? { currentURL }
     var folderURL: URL? { playlistFolder }
+    var scheduleSlots: [ScheduleSlot] { schedule }
     var hasVideo: Bool {
-        sourceMode == .single ? resolvedSingleURL() != nil : !videoFiles(in: playlistFolder).isEmpty
+        switch sourceMode {
+        case .single:   return resolvedSingleURL() != nil
+        case .playlist: return !videoFiles(in: playlistFolder).isEmpty
+        case .schedule: return resolvedScheduleSource() != nil
+        }
     }
 
     var playlistSummary: String {
@@ -118,10 +138,19 @@ final class WallpaperController {
            let m = try? JSONDecoder().decode([String: DisplaySource].self, from: data) {
             displayMap = m
         }
+        if let data = d.data(forKey: Key.schedule),
+           let s = try? JSONDecoder().decode([ScheduleSlot].self, from: data) {
+            schedule = s.sorted { $0.start < $1.start }
+        }
 
         NotificationCenter.default.addObserver(
             self, selector: #selector(screensChanged),
             name: NSApplication.didChangeScreenParametersNotification, object: nil)
+        // System Light/Dark switch — re-resolve the scheduled source.
+        DistributedNotificationCenter.default().addObserver(
+            self, selector: #selector(scheduleTick),
+            name: NSNotification.Name("AppleInterfaceThemeChangedNotification"),
+            object: nil)
         NotificationCenter.default.addObserver(
             self, selector: #selector(occlusionChanged(_:)),
             name: NSWindow.didChangeOcclusionStateNotification, object: nil)
@@ -150,6 +179,67 @@ final class WallpaperController {
             self?.updatePlayback()
         }
         fullscreen.start()
+        currentScheduleKey = scheduleSelectionKey()
+        applySourceToViews()
+        updatePlayback()
+        updateScheduleTimer()
+    }
+
+    // MARK: Time-of-day schedule
+
+    func setSchedule(_ slots: [ScheduleSlot]) {
+        schedule = slots.sorted { $0.start < $1.start }
+        if let data = try? JSONEncoder().encode(schedule) {
+            UserDefaults.standard.set(data, forKey: Key.schedule)
+        }
+        if sourceMode == .schedule {
+            currentScheduleKey = scheduleSelectionKey()
+            applySourceToViews()
+            updatePlayback()
+        }
+    }
+
+    private func systemIsDark() -> Bool {
+        NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+    }
+
+    /// The slot in effect now: the one with the greatest start time at or
+    /// before the current minute, wrapping to the last slot overnight.
+    private func activeSlot() -> ScheduleSlot? {
+        guard !schedule.isEmpty else { return nil }
+        let cal = Calendar.current
+        let c = cal.dateComponents([.hour, .minute], from: Date())
+        let mins = (c.hour ?? 0) * 60 + (c.minute ?? 0)
+        return schedule.last { $0.start <= mins } ?? schedule.last
+    }
+
+    private func resolvedScheduleSource() -> DisplaySource? {
+        guard let slot = activeSlot() else { return nil }
+        if systemIsDark() { return slot.dark ?? slot.light }
+        return slot.light ?? slot.dark
+    }
+
+    private func scheduleSelectionKey() -> String {
+        guard sourceMode == .schedule, let s = resolvedScheduleSource() else { return "" }
+        return "\(s.kind):\(s.path)"
+    }
+
+    private func updateScheduleTimer() {
+        scheduleTimer?.invalidate()
+        scheduleTimer = nil
+        guard sourceMode == .schedule else { return }
+        let t = Timer(timeInterval: 30, repeats: true) { [weak self] _ in
+            self?.scheduleTick()
+        }
+        RunLoop.main.add(t, forMode: .common)
+        scheduleTimer = t
+    }
+
+    @objc private func scheduleTick() {
+        guard sourceMode == .schedule else { return }
+        let key = scheduleSelectionKey()
+        guard key != currentScheduleKey else { return }
+        currentScheduleKey = key
         applySourceToViews()
         updatePlayback()
     }
@@ -239,6 +329,17 @@ final class WallpaperController {
             guard !urls.isEmpty else { return }
             if shuffle { urls.shuffle() }
             view.loadPlaylist(urls)
+        case .schedule:
+            guard let src = resolvedScheduleSource() else { return }
+            let url = URL(fileURLWithPath: src.path)
+            if src.kind == "playlist" {
+                var urls = videoFiles(in: url)
+                guard !urls.isEmpty else { return }
+                if shuffle { urls.shuffle() }
+                view.loadPlaylist(urls)
+            } else if FileManager.default.fileExists(atPath: src.path) {
+                view.loadSingle(url: url)
+            }
         }
     }
 

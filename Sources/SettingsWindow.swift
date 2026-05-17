@@ -44,6 +44,7 @@ final class SettingsWindowController: NSWindowController {
     private let stockBrowser = StockBrowserWindowController()
     private var library: LibraryWindowController!
     private var displayConfig: DisplayConfigWindowController!
+    private var scheduleConfig: ScheduleWindowController!
     private static let pexelsKeyDefault = "DriftwallPexelsKey"
     private static let coverrKeyDefault = "DriftwallCoverrKey"
     private static let pixabayKeyDefault = "DriftwallPixabayKey"
@@ -66,6 +67,8 @@ final class SettingsWindowController: NSWindowController {
         library.onChange = { [weak self] in self?.refresh() }
         displayConfig = DisplayConfigWindowController(controller: controller)
         displayConfig.onChange = { [weak self] in self?.refresh() }
+        scheduleConfig = ScheduleWindowController(controller: controller)
+        scheduleConfig.onChange = { [weak self] in self?.refresh() }
         buildUI()
     }
 
@@ -173,7 +176,8 @@ final class SettingsWindowController: NSWindowController {
         sourceHeading.font = .boldSystemFont(ofSize: 13)
         stack.addArrangedSubview(sourceHeading)
 
-        sourcePopup.addItems(withTitles: ["Single video", "Playlist folder (crossfade)"])
+        sourcePopup.addItems(withTitles: [
+            "Single video", "Playlist folder (crossfade)", "Scheduled (time of day)"])
         sourcePopup.target = self
         sourcePopup.action = #selector(sourceChanged)
         stack.addArrangedSubview(sourcePopup)
@@ -192,6 +196,8 @@ final class SettingsWindowController: NSWindowController {
             NSButton(title: "Choose Folder…", target: self, action: #selector(chooseFolder)))
         sourceButtons.addArrangedSubview(
             NSButton(title: "Displays…", target: self, action: #selector(openDisplays)))
+        sourceButtons.addArrangedSubview(
+            NSButton(title: "Schedule…", target: self, action: #selector(openSchedule)))
         sourceButtons.addArrangedSubview(
             NSButton(title: "Browse Stock…", target: self, action: #selector(openStock)))
         stack.addArrangedSubview(sourceButtons)
@@ -360,7 +366,11 @@ final class SettingsWindowController: NSWindowController {
 
     func refresh() {
         pathLabel.stringValue = controller.videoURL?.path ?? "None selected"
-        sourcePopup.selectItem(at: controller.sourceMode == .playlist ? 1 : 0)
+        switch controller.sourceMode {
+        case .single:   sourcePopup.selectItem(at: 0)
+        case .playlist: sourcePopup.selectItem(at: 1)
+        case .schedule: sourcePopup.selectItem(at: 2)
+        }
         folderLabel.stringValue = controller.playlistSummary
         apiKeyField.stringValue = UserDefaults.standard.string(forKey: Self.pexelsKeyDefault) ?? ""
         coverrKeyField.stringValue = UserDefaults.standard.string(forKey: Self.coverrKeyDefault) ?? ""
@@ -431,11 +441,16 @@ final class SettingsWindowController: NSWindowController {
     }
 
     @objc private func sourceChanged() {
-        // Switching to playlist needs a folder; prompt if none yet.
-        if sourcePopup.indexOfSelectedItem == 1 {
+        switch sourcePopup.indexOfSelectedItem {
+        case 1:
+            // Switching to playlist needs a folder; prompt if none yet.
             if controller.folderURL == nil { chooseFolder() }
             else { controller.sourceMode = .playlist }
-        } else {
+        case 2:
+            controller.sourceMode = .schedule
+            // No slots yet — open the editor so it isn't a no-op.
+            if controller.scheduleSlots.isEmpty { scheduleConfig.show() }
+        default:
             controller.sourceMode = .single
         }
         refresh()
@@ -468,6 +483,12 @@ final class SettingsWindowController: NSWindowController {
     }
 
     func openDisplaysWindow() { openDisplays() }
+
+    @objc private func openSchedule() {
+        scheduleConfig.show()
+    }
+
+    func openScheduleWindow() { openSchedule() }
 
     func openVideoLibrary() { openLibrary() }
 

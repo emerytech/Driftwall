@@ -119,6 +119,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         disp.target = self
         menu.addItem(disp)
 
+        let sched = NSMenuItem(title: "Schedule…",
+                               action: #selector(menuSchedule), keyEquivalent: "")
+        sched.target = self
+        menu.addItem(sched)
+
         let pause = NSMenuItem(title: "Pause",
                                action: #selector(togglePause), keyEquivalent: "p")
         pause.target = self
@@ -193,6 +198,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func menuDisplays() {
         settings.show()
         settings.openDisplaysWindow()
+    }
+
+    @objc private func menuSchedule() {
+        settings.show()
+        settings.openScheduleWindow()
     }
 
     @objc private func togglePause() {
