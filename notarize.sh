@@ -41,7 +41,12 @@ fi
 
 ./build.sh
 
-if ! codesign -dv --verbose=2 Driftwall.app 2>&1 | grep -q "Authority=Developer ID Application"; then
+# Capture once, then inspect — piping `codesign | grep -q` trips
+# `set -o pipefail`: grep -q closes the pipe on first match, codesign
+# dies with SIGPIPE, and the pipeline reports failure even though the
+# app is correctly signed.
+SIG=$(codesign -dv --verbose=2 Driftwall.app 2>&1 || true)
+if ! grep -q "Authority=Developer ID Application" <<<"$SIG"; then
   echo "ERROR: Driftwall.app is not Developer ID signed. Create the cert"
   echo "in Xcode (Settings → Accounts → Manage Certificates → + →"
   echo "Developer ID Application), or run ./tools/make-devid-cert.sh,"
@@ -52,7 +57,7 @@ fi
 if [ "$AUTH_METHOD" = "apikey" ]; then
   NOTARY_AUTH=(--key "$AC_API_KEY" --key-id "$AC_KEY_ID" --issuer "$AC_ISSUER")
 else
-  TEAM=$(codesign -dv --verbose=2 Driftwall.app 2>&1 | sed -n 's/^TeamIdentifier=//p')
+  TEAM=$(sed -n 's/^TeamIdentifier=//p' <<<"$SIG")
   NOTARY_AUTH=(--apple-id "$AC_APPLE_ID" --password "$AC_PASSWORD" --team-id "$TEAM")
 fi
 
