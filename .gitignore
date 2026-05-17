@@ -1,6 +1,7 @@
 # Build output
 Driftwall.app/
 *.zip
+dist/
 
 # Generated icons (build.sh regenerates from tools/MakeIcons.swift)
 Resources/AppIcon.icns
