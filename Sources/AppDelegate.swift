@@ -49,6 +49,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             // Already onboarded but nothing configured — jump to settings.
             DispatchQueue.main.async { [weak self] in self?.settings.show() }
         }
+
+        // One-time tip prompt, only once the app has been kept around a
+        // while. Deferred so it never collides with onboarding/settings.
+        DispatchQueue.main.async { SupportPrompt.maybePromptOnLaunch() }
     }
 
     // Re-launching the app (double-click in Finder / Spotlight) reopens
@@ -178,6 +182,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
 
+        let support = NSMenuItem(title: "Support Driftwall…",
+                                 action: #selector(menuSupport), keyEquivalent: "")
+        support.target = self
+        menu.addItem(support)
+
         let quit = NSMenuItem(title: "Quit Driftwall",
                               action: #selector(NSApplication.terminate(_:)),
                               keyEquivalent: "q")
@@ -235,6 +244,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func menuSchedule() {
         settings.show()
         settings.openScheduleWindow()
+    }
+
+    @objc private func menuSupport() {
+        SupportPrompt.openKofi()
     }
 
     @objc private func togglePause() {

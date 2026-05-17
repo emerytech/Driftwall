@@ -23,6 +23,7 @@ swiftc -O \
   Sources/PowerMonitor.swift \
   Sources/FullscreenMonitor.swift \
   Sources/BatteryWarning.swift \
+  Sources/SupportPrompt.swift \
   Sources/SettingsWindow.swift \
   Sources/VideoFetcher.swift \
   Sources/StockBrowser.swift \

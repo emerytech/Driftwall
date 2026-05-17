@@ -324,10 +324,18 @@ final class SettingsWindowController: NSWindowController {
 
         stack.addArrangedSubview(separator())
 
+        let bottom = NSStackView()
+        bottom.orientation = .horizontal
+        bottom.spacing = 8
+        bottom.addArrangedSubview(NSButton(title: "Support Driftwall…",
+            target: self, action: #selector(openSupport)))
         let quit = NSButton(title: "Quit Driftwall",
                             target: NSApp, action: #selector(NSApplication.terminate(_:)))
-        stack.addArrangedSubview(quit)
+        bottom.addArrangedSubview(quit)
+        stack.addArrangedSubview(bottom)
     }
+
+    @objc private func openSupport() { SupportPrompt.openKofi() }
 
     private func separator() -> NSBox {
         let box = NSBox()
