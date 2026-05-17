@@ -65,8 +65,45 @@ ZIP="Driftwall.zip"
 rm -f "$ZIP"
 ditto -c -k --keepParent Driftwall.app "$ZIP"
 
-echo "Submitting to Apple notary service (this can take a few minutes)…"
-xcrun notarytool submit "$ZIP" "${NOTARY_AUTH[@]}" --wait
+echo "Submitting to Apple notary service…"
+# Submit WITHOUT --wait, then poll. `--wait` blocks for the whole
+# (multi-minute, occasionally 20+) processing window in one call; if
+# that call is killed (timeout, Ctrl-C) the submission has still been
+# accepted server-side but the run never staples. Polling keeps each
+# command short and prints progress; an interrupted run can be resumed
+# with: xcrun notarytool info <id> … (creds from config.local.sh).
+SUBMIT_JSON=$(xcrun notarytool submit "$ZIP" "${NOTARY_AUTH[@]}" \
+                --output-format json)
+SUB_ID=$(/usr/bin/python3 -c 'import sys,json; print(json.load(sys.stdin)["id"])' \
+           <<<"$SUBMIT_JSON" 2>/dev/null || true)
+if [ -z "$SUB_ID" ]; then
+  echo "ERROR: no submission id returned:"; echo "$SUBMIT_JSON"; rm -f "$ZIP"; exit 1
+fi
+echo "Submission id: $SUB_ID — polling (Ctrl-C is safe; resume with notarytool info)…"
+
+STATUS=""
+for _ in $(seq 1 80); do                       # ~40 min ceiling (80 × 30s)
+  sleep 30
+  INFO=$(xcrun notarytool info "$SUB_ID" "${NOTARY_AUTH[@]}" \
+           --output-format json 2>/dev/null || true)
+  STATUS=$(/usr/bin/python3 -c 'import sys,json
+try: print(json.load(sys.stdin).get("status",""))
+except Exception: print("")' <<<"$INFO" 2>/dev/null || true)
+  echo "  status: ${STATUS:-querying…}"
+  case "$STATUS" in
+    Accepted) break ;;
+    Invalid|Rejected)
+      echo "Notarization $STATUS — log follows:"
+      xcrun notarytool log "$SUB_ID" "${NOTARY_AUTH[@]}" || true
+      rm -f "$ZIP"; exit 1 ;;
+  esac
+done
+
+if [ "$STATUS" != "Accepted" ]; then
+  echo "ERROR: notarization not done (last status: ${STATUS:-unknown})."
+  echo "It may still finish — check: xcrun notarytool info $SUB_ID … then staple."
+  rm -f "$ZIP"; exit 1
+fi
 
 xcrun stapler staple Driftwall.app
 rm -f "$ZIP"
