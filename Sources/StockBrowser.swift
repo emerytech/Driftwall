@@ -344,6 +344,7 @@ final class StockBrowserWindowController: NSWindowController, NSSearchFieldDeleg
 
     private var lastResults: [StockVideo] = []
     private var page = 1
+    private var thumbCache: [URL: NSImage] = [:]
 
     private var source: StockSource {
         StockSource(rawValue: providerControl.selectedSegment) ?? .pexels
@@ -474,6 +475,7 @@ final class StockBrowserWindowController: NSWindowController, NSSearchFieldDeleg
     @objc private func refreshTapped() { performLoad(page: page + 1) }
 
     private func performLoad(page requested: Int) {
+        thumbCache.removeAll()   // new query/page/criteria — old thumbs won't recur
         let q = searchField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         let src = source
         let res = resolution
@@ -524,17 +526,41 @@ final class StockBrowserWindowController: NSWindowController, NSSearchFieldDeleg
         }
     }
 
+    private static let cardWidth: CGFloat = 240
+    private static let cardSpacing: CGFloat = 14
+
+    private func columnCount() -> Int {
+        let avail = (window?.contentView?.bounds.width ?? 720) - 32   // side margins
+        let per = Self.cardWidth + Self.cardSpacing
+        return max(1, Int((avail + Self.cardSpacing) / per))
+    }
+
     private func renderResults() {
         rowActions.removeAll()
         resultsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        sorted(lastResults).forEach { addRow($0) }
+
+        let vids = sorted(lastResults)
+        let cols = columnCount()
+        var i = 0
+        while i < vids.count {
+            let rowVids = Array(vids[i ..< min(i + cols, vids.count)])
+            let row = NSStackView()
+            row.orientation = .horizontal
+            row.alignment = .top
+            row.spacing = Self.cardSpacing
+            rowVids.forEach { row.addArrangedSubview(card($0)) }
+            resultsStack.addArrangedSubview(row)
+            i += cols
+        }
     }
 
-    private func addRow(_ v: StockVideo) {
-        let row = NSStackView()
-        row.orientation = .horizontal
-        row.alignment = .centerY
-        row.spacing = 12
+    private func card(_ v: StockVideo) -> NSView {
+        let cell = NSStackView()
+        cell.orientation = .vertical
+        cell.alignment = .leading
+        cell.spacing = 6
+        cell.translatesAutoresizingMaskIntoConstraints = false
+        cell.widthAnchor.constraint(equalToConstant: Self.cardWidth).isActive = true
 
         let thumb = NSImageView()
         thumb.imageScaling = .scaleProportionallyUpOrDown
@@ -543,14 +569,20 @@ final class StockBrowserWindowController: NSWindowController, NSSearchFieldDeleg
         thumb.layer?.cornerRadius = 6
         thumb.layer?.masksToBounds = true
         thumb.translatesAutoresizingMaskIntoConstraints = false
-        thumb.widthAnchor.constraint(equalToConstant: 160).isActive = true
-        thumb.heightAnchor.constraint(equalToConstant: 90).isActive = true
+        thumb.widthAnchor.constraint(equalToConstant: Self.cardWidth).isActive = true
+        thumb.heightAnchor.constraint(equalToConstant: Self.cardWidth * 9 / 16).isActive = true
 
-        let label = NSTextField(labelWithString: v.caption)
+        let label = NSTextField(wrappingLabelWithString: v.caption)
         label.textColor = .secondaryLabelColor
+        label.maximumNumberOfLines = 2
         label.lineBreakMode = .byTruncatingTail
+        label.font = .systemFont(ofSize: 11)
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.widthAnchor.constraint(equalToConstant: 300).isActive = true
+        label.widthAnchor.constraint(equalToConstant: Self.cardWidth).isActive = true
+
+        let buttons = NSStackView()
+        buttons.orientation = .horizontal
+        buttons.spacing = 8
 
         let previewBtn = NSButton(title: "Preview", target: nil, action: nil)
         previewBtn.bezelStyle = .rounded
@@ -568,16 +600,23 @@ final class StockBrowserWindowController: NSWindowController, NSSearchFieldDeleg
         use.target = useAction
         use.action = #selector(ButtonAction.fire)
 
-        row.addArrangedSubview(thumb)
-        row.addArrangedSubview(label)
-        row.addArrangedSubview(previewBtn)
-        row.addArrangedSubview(use)
-        resultsStack.addArrangedSubview(row)
+        buttons.addArrangedSubview(previewBtn)
+        buttons.addArrangedSubview(use)
 
-        URLSession.shared.dataTask(with: v.thumb) { data, _, _ in
-            guard let data = data, let img = NSImage(data: data) else { return }
-            DispatchQueue.main.async { thumb.image = img }
-        }.resume()
+        [thumb, label, buttons].forEach { cell.addArrangedSubview($0) }
+
+        if let cached = thumbCache[v.thumb] {
+            thumb.image = cached
+        } else {
+            URLSession.shared.dataTask(with: v.thumb) { [weak self] data, _, _ in
+                guard let data = data, let img = NSImage(data: data) else { return }
+                DispatchQueue.main.async {
+                    self?.thumbCache[v.thumb] = img
+                    thumb.image = img
+                }
+            }.resume()
+        }
+        return cell
     }
 }
 
