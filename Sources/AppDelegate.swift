@@ -59,6 +59,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return true
     }
 
+    // driftwall:// automation scheme. Works from Shortcuts ("Open URLs"),
+    // AppleScript, Terminal (`open "driftwall://pause"`), Automator, etc.
+    //   driftwall://pause | resume | toggle
+    //   driftwall://video?path=/absolute/path.mp4
+    //   driftwall://settings
+    func application(_ application: NSApplication, open urls: [URL]) {
+        urls.forEach(handle(url:))
+    }
+
+    private func handle(url: URL) {
+        guard url.scheme == "driftwall", controller != nil else { return }
+        let command = (url.host ?? url.path.trimmingCharacters(in: CharacterSet(charactersIn: "/")))
+            .lowercased()
+        switch command {
+        case "pause":
+            controller.setPaused(true)
+        case "resume", "play":
+            controller.setPaused(false)
+        case "toggle":
+            controller.togglePause()
+        case "video":
+            let comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            guard let path = comps?.queryItems?.first(where: { $0.name == "path" })?.value,
+                  !path.isEmpty else { return }
+            controller.setVideo(url: URL(fileURLWithPath: (path as NSString).expandingTildeInPath))
+        case "settings":
+            settings?.show()
+        default:
+            break
+        }
+    }
+
     func setMenuBar(_ on: Bool) {
         menuBarVisible = on
         if on, statusItem == nil {

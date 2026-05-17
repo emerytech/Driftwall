@@ -30,5 +30,17 @@
         <key>NSAllowsArbitraryLoads</key>
         <true/>
     </dict>
+    <!-- driftwall:// automation scheme (Shortcuts, AppleScript, Terminal). -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.local.driftwall.url</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>driftwall</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>

@@ -261,6 +261,12 @@ final class WallpaperController {
         updatePlayback()
     }
 
+    func setPaused(_ paused: Bool) {
+        guard paused != isPaused else { return }
+        isPaused = paused
+        updatePlayback()
+    }
+
     // MARK: Per-display configuration
 
     func connectedDisplays() -> [String] { NSScreen.screens.map(screenKey) }
