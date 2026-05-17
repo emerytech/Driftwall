@@ -183,17 +183,18 @@ final class LibraryWindowController: NSWindowController {
         [thumb, label, prevBtn, useBtn, revealBtn, delBtn].forEach { row.addArrangedSubview($0) }
         stack.addArrangedSubview(row)
 
-        // Thumbnail off the main thread.
-        DispatchQueue.global(qos: .userInitiated).async {
-            let asset = AVURLAsset(url: url)
-            let gen = AVAssetImageGenerator(asset: asset)
-            gen.appliesPreferredTrackTransform = true
-            gen.maximumSize = CGSize(width: 320, height: 180)
-            let t = CMTime(seconds: 1, preferredTimescale: 600)
-            if let cg = try? gen.copyCGImage(at: t, actualTime: nil) {
-                let img = NSImage(cgImage: cg, size: .zero)
-                DispatchQueue.main.async { thumb.image = img }
-            }
+        // Thumbnail generated off the main thread. The generator must
+        // stay alive until the callback fires, so capture it strongly.
+        let asset = AVURLAsset(url: url)
+        let gen = AVAssetImageGenerator(asset: asset)
+        gen.appliesPreferredTrackTransform = true
+        gen.maximumSize = CGSize(width: 320, height: 180)
+        let t = CMTime(seconds: 1, preferredTimescale: 600)
+        gen.generateCGImageAsynchronously(for: t) { [gen] cg, _, _ in
+            _ = gen
+            guard let cg else { return }
+            let img = NSImage(cgImage: cg, size: .zero)
+            DispatchQueue.main.async { thumb.image = img }
         }
     }
 
