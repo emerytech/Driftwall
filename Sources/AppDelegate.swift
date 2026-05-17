@@ -200,6 +200,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func toggleBattery() {
         controller.pauseOnBattery.toggle()
+        if !controller.pauseOnBattery { BatteryWarning.showAfterDisable() }
     }
 
     @objc private func toggleLogin() {

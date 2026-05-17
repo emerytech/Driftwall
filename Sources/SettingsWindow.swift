@@ -581,7 +581,11 @@ final class SettingsWindowController: NSWindowController {
     }
 
     @objc private func togglePause() { controller.togglePause(); refresh() }
-    @objc private func toggleBattery() { controller.pauseOnBattery.toggle(); refresh() }
+    @objc private func toggleBattery() {
+        controller.pauseOnBattery.toggle()
+        if !controller.pauseOnBattery { BatteryWarning.showAfterDisable() }
+        refresh()
+    }
     @objc private func toggleLowPower() { controller.pauseOnLowPower = (lowPowerCheck.state == .on) }
     @objc private func toggleReduceMotion() { controller.respectReduceMotion = (reduceMotionCheck.state == .on) }
     @objc private func toggleMenuBar() { setMenuBarVisible(menuBarCheck.state == .on) }
