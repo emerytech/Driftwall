@@ -1,0 +1,13 @@
+# Build output
+Driftwall.app/
+*.zip
+
+# Generated icons (build.sh regenerates from tools/MakeIcons.swift)
+Resources/AppIcon.icns
+Resources/MenuBar.pdf
+
+# Local, untracked signing/notarization config (never commit)
+config.local.sh
+
+# macOS cruft
+.DS_Store

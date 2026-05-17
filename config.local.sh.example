@@ -1,0 +1,24 @@
+# Copy this file to `config.local.sh` (which is git-ignored) and fill in
+# your values. notarize.sh and tools/make-devid-cert.sh source it
+# automatically, so you keep one-command signing without committing
+# anything personal.
+#
+#   cp config.local.sh.example config.local.sh
+#   $EDITOR config.local.sh
+
+# App Store Connect API key (.p8) — absolute path, kept OUTSIDE the repo.
+export AC_API_KEY="/absolute/path/to/AuthKey_XXXXXXXXXX.p8"
+
+# Key ID — the XXXXXXXXXX in the .p8 filename.
+export AC_KEY_ID="XXXXXXXXXX"
+
+# Issuer ID — App Store Connect → Users and Access → Integrations →
+# API Keys (also shown as "Developer ID" on the Membership page).
+export AC_ISSUER="00000000-0000-0000-0000-000000000000"
+
+# Apple Developer Team ID (10 chars). Used by notarize.sh's Apple-ID path.
+export AC_TEAM_ID="XXXXXXXXXX"
+
+# Optional: Apple-ID notarization instead of the .p8 (no Issuer needed).
+# export AC_APPLE_ID="you@example.com"
+# export AC_PASSWORD="xxxx-xxxx-xxxx-xxxx"   # appleid.apple.com app-specific
