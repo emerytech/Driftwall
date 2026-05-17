@@ -27,6 +27,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             WallpaperController.Key.crossfade: 1.5,
             WallpaperController.Key.lowPower: true,
             WallpaperController.Key.reduceMotion: true,
+            WallpaperController.Key.fullscreen: true,
             Self.showMenuBarKey: true,
         ])
 

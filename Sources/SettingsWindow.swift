@@ -30,6 +30,7 @@ final class SettingsWindowController: NSWindowController {
     private let batteryCheck = NSButton(checkboxWithTitle: "Pause on battery", target: nil, action: nil)
     private let lowPowerCheck = NSButton(checkboxWithTitle: "Pause in Low Power Mode", target: nil, action: nil)
     private let reduceMotionCheck = NSButton(checkboxWithTitle: "Respect Reduce Motion", target: nil, action: nil)
+    private let fullscreenCheck = NSButton(checkboxWithTitle: "Pause when an app is fullscreen", target: nil, action: nil)
     private let loginCheck = NSButton(checkboxWithTitle: "Launch at login", target: nil, action: nil)
     private let menuBarCheck = NSButton(checkboxWithTitle: "Show menu-bar icon", target: nil, action: nil)
     private let appearanceControl = NSSegmentedControl(
@@ -296,6 +297,7 @@ final class SettingsWindowController: NSWindowController {
         for (box, sel) in [(pauseCheck, #selector(togglePause)),
                            (batteryCheck, #selector(toggleBattery)),
                            (lowPowerCheck, #selector(toggleLowPower)),
+                           (fullscreenCheck, #selector(toggleFullscreen)),
                            (reduceMotionCheck, #selector(toggleReduceMotion)),
                            (loginCheck, #selector(toggleLogin)),
                            (menuBarCheck, #selector(toggleMenuBar))] {
@@ -376,6 +378,7 @@ final class SettingsWindowController: NSWindowController {
         batteryCheck.state = controller.pauseOnBattery ? .on : .off
         lowPowerCheck.state = controller.pauseOnLowPower ? .on : .off
         reduceMotionCheck.state = controller.respectReduceMotion ? .on : .off
+        fullscreenCheck.state = controller.pauseOnFullscreen ? .on : .off
         loginCheck.state = (SMAppService.mainApp.status == .enabled) ? .on : .off
         menuBarCheck.state = menuBarIsOn() ? .on : .off
         appearanceControl.selectedSegment = (Appearance.mode == .glass) ? 0 : 1
@@ -628,6 +631,7 @@ final class SettingsWindowController: NSWindowController {
         refresh()
     }
     @objc private func toggleLowPower() { controller.pauseOnLowPower = (lowPowerCheck.state == .on) }
+    @objc private func toggleFullscreen() { controller.pauseOnFullscreen = (fullscreenCheck.state == .on) }
     @objc private func toggleReduceMotion() { controller.respectReduceMotion = (reduceMotionCheck.state == .on) }
     @objc private func toggleMenuBar() { setMenuBarVisible(menuBarCheck.state == .on) }
 

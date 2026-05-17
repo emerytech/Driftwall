@@ -21,6 +21,7 @@ swiftc -O \
   Sources/VideoWallpaperView.swift \
   Sources/WallpaperController.swift \
   Sources/PowerMonitor.swift \
+  Sources/FullscreenMonitor.swift \
   Sources/BatteryWarning.swift \
   Sources/SettingsWindow.swift \
   Sources/VideoFetcher.swift \

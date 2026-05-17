@@ -30,6 +30,7 @@ final class WallpaperController {
         static let clipMax = "DriftwallClipMax"
         static let lowPower = "DriftwallPauseLowPower"
         static let reduceMotion = "DriftwallRespectReduceMotion"
+        static let fullscreen = "DriftwallPauseOnFullscreen"
         static let displays = "DriftwallDisplayMap"
     }
 
@@ -50,6 +51,9 @@ final class WallpaperController {
     }
     var respectReduceMotion: Bool {
         didSet { UserDefaults.standard.set(respectReduceMotion, forKey: Key.reduceMotion); updatePlayback() }
+    }
+    var pauseOnFullscreen: Bool {
+        didSet { UserDefaults.standard.set(pauseOnFullscreen, forKey: Key.fullscreen); updatePlayback() }
     }
     var fill: Bool {
         didSet { UserDefaults.standard.set(fill, forKey: Key.fill); views.forEach { $0.fill = fill } }
@@ -83,6 +87,8 @@ final class WallpaperController {
     private var playlistFolder: URL?
     private var displayMap: [String: DisplaySource] = [:]
     private let power = PowerMonitor()
+    private let fullscreen = FullscreenMonitor()
+    private var fullscreenCovered = false
 
     var videoURL: URL? { currentURL }
     var folderURL: URL? { playlistFolder }
@@ -101,6 +107,7 @@ final class WallpaperController {
         pauseOnBattery = d.bool(forKey: Key.battery)
         pauseOnLowPower = d.bool(forKey: Key.lowPower)
         respectReduceMotion = d.bool(forKey: Key.reduceMotion)
+        pauseOnFullscreen = d.bool(forKey: Key.fullscreen)
         fill = d.bool(forKey: Key.fill)
         speed = d.double(forKey: Key.speed)
         muted = d.bool(forKey: Key.muted)
@@ -138,6 +145,11 @@ final class WallpaperController {
             self?.updatePlayback()
         }
         power.start()
+        fullscreen.onChange = { [weak self] covered in
+            self?.fullscreenCovered = covered
+            self?.updatePlayback()
+        }
+        fullscreen.start()
         applySourceToViews()
         updatePlayback()
     }
@@ -252,7 +264,9 @@ final class WallpaperController {
         let lowPowerBlocked = pauseOnLowPower && ProcessInfo.processInfo.isLowPowerModeEnabled
         let reduceMotionBlocked = respectReduceMotion
             && NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        let blocked = isPaused || batteryBlocked || lowPowerBlocked || reduceMotionBlocked
+        let fullscreenBlocked = pauseOnFullscreen && fullscreenCovered
+        let blocked = isPaused || batteryBlocked || lowPowerBlocked
+            || reduceMotionBlocked || fullscreenBlocked
         for (i, view) in views.enumerated() {
             (!blocked && visible[i]) ? view.play() : view.pause()
         }
