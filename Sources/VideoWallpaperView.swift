@@ -43,6 +43,11 @@ final class VideoWallpaperView: NSView {
 
     required init?(coder: NSCoder) { fatalError("not used") }
 
+    // Views are discarded and rebuilt on every display reconfiguration.
+    // A periodic time observer MUST be removed before its player
+    // deallocates, or it leaks / can crash — so tear down on the way out.
+    deinit { teardown() }
+
     override func layout() {
         super.layout()
         layerA.frame = bounds

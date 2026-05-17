@@ -101,6 +101,7 @@ final class WallpaperController {
     private let power = PowerMonitor()
     private let fullscreen = FullscreenMonitor()
     private var fullscreenCovered = false
+    private var screensAsleep = false
     private var schedule: [ScheduleSlot] = []
     private var scheduleTimer: Timer?
     private var currentScheduleKey = ""
@@ -160,7 +161,17 @@ final class WallpaperController {
         NSWorkspace.shared.notificationCenter.addObserver(
             self, selector: #selector(envChanged),
             name: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil)
+        // No point decoding video while the screen is asleep.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self, selector: #selector(screensSlept),
+            name: NSWorkspace.screensDidSleepNotification, object: nil)
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self, selector: #selector(screensWoke),
+            name: NSWorkspace.screensDidWakeNotification, object: nil)
     }
+
+    @objc private func screensSlept() { screensAsleep = true;  updatePlayback() }
+    @objc private func screensWoke()  { screensAsleep = false; updatePlayback() }
 
     func start() {
         let d = UserDefaults.standard
@@ -373,7 +384,7 @@ final class WallpaperController {
             && NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         let fullscreenBlocked = pauseOnFullscreen && fullscreenCovered
         let blocked = isPaused || batteryBlocked || lowPowerBlocked
-            || reduceMotionBlocked || fullscreenBlocked
+            || reduceMotionBlocked || fullscreenBlocked || screensAsleep
         for (i, view) in views.enumerated() {
             (!blocked && visible[i]) ? view.play() : view.pause()
         }
@@ -397,6 +408,7 @@ final class WallpaperController {
 
     private func rebuildWindows() {
         windows.forEach { $0.orderOut(nil) }
+        views.forEach { $0.pause() }      // stop decoding before the views are dropped
         windows.removeAll()
         views.removeAll()
         visible.removeAll()
