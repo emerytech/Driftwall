@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftwall — live video wallpaper for macOS</title>
+<meta name="description" content="Driftwall turns any video into a calm, energy-aware live wallpaper for macOS. Free and open.">
+<style>
+  :root{
+    --bg:#0b1016; --panel:#121a24; --line:#1e2b3a;
+    --fg:#e8eef5; --dim:#9fb0c3; --accent:#4aa8ff; --accent2:#2d7fd6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:linear-gradient(180deg,#0b1016,#0e1622 40%,#0b1016);
+    color:var(--fg);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:880px;margin:0 auto;padding:0 24px}
+  header{padding:88px 0 56px;text-align:center}
+  .icon{width:128px;height:128px;border-radius:28px;box-shadow:0 16px 50px rgba(0,0,0,.55);}
+  h1{font-size:44px;letter-spacing:-.02em;margin:24px 0 8px}
+  .tag{font-size:19px;color:var(--dim);max-width:560px;margin:0 auto 32px}
+  .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:28px}
+  .btn{
+    display:inline-block;padding:13px 22px;border-radius:11px;font-weight:600;
+    background:linear-gradient(180deg,var(--accent),var(--accent2));color:#fff;
+    border:1px solid #1c5fa8;transition:transform .08s ease;
+  }
+  .btn:hover{transform:translateY(-1px);text-decoration:none}
+  .btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+  .btn.coffee{background:linear-gradient(180deg,#ff6b57,#e0492f);border-color:#c23c25}
+  code,pre{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace}
+  .cmd{
+    background:#070b10;border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;color:#d6e6ff;font-size:14px;overflow-x:auto;text-align:left;
+  }
+  section{padding:46px 0;border-top:1px solid var(--line)}
+  h2{font-size:24px;margin-bottom:18px;letter-spacing:-.01em}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}h1{font-size:34px}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .card h3{font-size:16px;margin-bottom:6px}
+  .card p{color:var(--dim);font-size:14px}
+  ol{margin:0 0 0 20px}ol li{margin:10px 0}
+  .muted{color:var(--dim);font-size:14px}
+  footer{padding:42px 0 70px;text-align:center;color:var(--dim);font-size:14px;border-top:1px solid var(--line)}
+  .pill{display:inline-block;font-size:12px;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:4px 12px;margin-bottom:18px}
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <span class="pill">macOS 13+ · Apple silicon &amp; Intel · Free</span><br>
+  <img class="icon" src="icon.png" alt="Driftwall icon">
+  <h1>Driftwall</h1>
+  <p class="tag">Turn any video into a calm, energy-aware live wallpaper. It lives in the menu bar, pauses itself when it should, and stays out of your way.</p>
+  <div class="cta">
+    <a class="btn" href="https://github.com/emerytech/Driftwall/releases/latest">Download for macOS</a>
+    <a class="btn ghost" href="#install">Install with Homebrew</a>
+    <a class="btn coffee" href="https://ko-fi.com/ets3d">☕ Buy me a coffee</a>
+  </div>
+</header>
+
+<section class="wrap" id="features">
+  <h2>What it does</h2>
+  <div class="grid">
+    <div class="card"><h3>Any video, your desktop</h3><p>Pick a file, paste a URL, or browse free stock clips (Pexels, Coverr, Pixabay) right in the app.</p></div>
+    <div class="card"><h3>Time-of-day &amp; Dark Mode</h3><p>Schedule different videos through the day, and auto-swap a light/dark variant with macOS appearance.</p></div>
+    <div class="card"><h3>Energy aware</h3><p>Pauses on battery, in Low Power Mode, when the screen sleeps, and when a fullscreen app or game covers the display.</p></div>
+    <div class="card"><h3>Multi-display</h3><p>Give each monitor its own video or a crossfading playlist folder.</p></div>
+    <div class="card"><h3>Automation</h3><p>Drive it from Shortcuts, AppleScript, or the terminal via the <code>driftwall://</code> URL scheme.</p></div>
+    <div class="card"><h3>Quiet by design</h3><p>No Dock icon, no account, no telemetry. A tidy menu-bar agent that respects Reduce Motion.</p></div>
+  </div>
+</section>
+
+<section class="wrap" id="install">
+  <h2>Install</h2>
+
+  <p style="margin-bottom:10px"><strong>Homebrew (recommended)</strong></p>
+  <pre class="cmd">brew install --cask emerytech/driftwall/driftwall</pre>
+
+  <p style="margin:22px 0 10px"><strong>Direct download</strong></p>
+  <ol>
+    <li>Grab the latest <code>.dmg</code> from the <a href="https://github.com/emerytech/Driftwall/releases/latest">releases page</a>.</li>
+    <li>Open it and drag <strong>Driftwall</strong> into <strong>Applications</strong>.</li>
+    <li>Launch it from Applications or Spotlight. It appears in the menu bar — there's no Dock icon.</li>
+  </ol>
+
+  <p class="muted" style="margin-top:18px">
+    Using an unsigned build? macOS may say it can't verify the developer. Right-click the app → <em>Open</em> once, or install with
+    <code>brew install --cask --no-quarantine …</code>. The notarized download installs with no prompt.
+  </p>
+
+  <p style="margin:22px 0 10px"><strong>Build from source</strong></p>
+  <pre class="cmd">git clone https://github.com/emerytech/Driftwall.git
+cd Driftwall &amp;&amp; ./build.sh &amp;&amp; open Driftwall.app</pre>
+</section>
+
+<section class="wrap">
+  <h2>Free, with a tip jar</h2>
+  <p class="muted" style="margin-bottom:18px">Driftwall is free and made by one person. If it's brightening your desktop, a small tip keeps it going — entirely optional.</p>
+  <a class="btn coffee" href="https://ko-fi.com/ets3d">☕ Support Driftwall on Ko-fi</a>
+</section>
+
+<footer>
+  <p><a href="https://github.com/emerytech/Driftwall">Source on GitHub</a> · MIT-spirited, free forever · Made with care</p>
+</footer>
+
+</body>
+</html>
