@@ -55,10 +55,11 @@ final class SettingsWindowController: NSWindowController {
         self.controller = controller
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 480, height: 720),
-            styleMask: [.titled, .closable],
+            styleMask: [.titled, .closable, .resizable],
             backing: .buffered, defer: false)
         window.title = "Driftwall"
         window.isReleasedWhenClosed = false
+        window.minSize = NSSize(width: 460, height: 360)
         super.init(window: window)
         library = LibraryWindowController(controller: controller)
         library.onChange = { [weak self] in self?.refresh() }
@@ -76,12 +77,40 @@ final class SettingsWindowController: NSWindowController {
         stack.alignment = .leading
         stack.spacing = 12
         stack.translatesAutoresizingMaskIntoConstraints = false
-        content.addSubview(stack)
+
+        // The control list is taller than the window on smaller screens, so
+        // host it in a scroll view — otherwise the bottom rows (Appearance,
+        // Quit) end up hidden behind the Dock and are unreachable.
+        let scroll = NSScrollView()
+        scroll.translatesAutoresizingMaskIntoConstraints = false
+        scroll.hasVerticalScroller = true
+        scroll.hasHorizontalScroller = false
+        scroll.autohidesScrollers = true
+        scroll.drawsBackground = false
+        let doc = NSView()
+        doc.translatesAutoresizingMaskIntoConstraints = false
+        doc.addSubview(stack)
+        scroll.documentView = doc
+        content.addSubview(scroll)
+
+        let clip = scroll.contentView
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: content.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: content.trailingAnchor, constant: -20),
-            stack.topAnchor.constraint(equalTo: content.topAnchor, constant: 20),
-            stack.bottomAnchor.constraint(lessThanOrEqualTo: content.bottomAnchor, constant: -20),
+            scroll.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            scroll.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+            scroll.topAnchor.constraint(equalTo: content.topAnchor),
+            scroll.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+
+            // Document width tracks the viewport (vertical scrolling only);
+            // its height is driven by the stack via the constants below.
+            doc.leadingAnchor.constraint(equalTo: clip.leadingAnchor),
+            doc.trailingAnchor.constraint(equalTo: clip.trailingAnchor),
+            doc.topAnchor.constraint(equalTo: clip.topAnchor),
+            doc.widthAnchor.constraint(equalTo: clip.widthAnchor),
+
+            stack.leadingAnchor.constraint(equalTo: doc.leadingAnchor, constant: 20),
+            stack.trailingAnchor.constraint(equalTo: doc.trailingAnchor, constant: -20),
+            stack.topAnchor.constraint(equalTo: doc.topAnchor, constant: 20),
+            stack.bottomAnchor.constraint(equalTo: doc.bottomAnchor, constant: -20),
         ])
 
         // Header: app icon + name + version.
@@ -359,9 +388,21 @@ final class SettingsWindowController: NSWindowController {
     func show() {
         refresh()
         NSApp.activate(ignoringOtherApps: true)
-        if let window { Appearance.register(window) }
-        window?.center()
-        window?.makeKeyAndOrderFront(nil)
+        if let window {
+            Appearance.register(window)
+            if let vf = (window.screen ?? NSScreen.main)?.visibleFrame {
+                // Never exceed the usable screen area, and keep the whole
+                // window (titlebar to bottom) inside it — top-aligned so a
+                // tall window doesn't run under the Dock.
+                var f = window.frame
+                f.size.height = min(f.size.height, vf.height)
+                f.size.width = min(f.size.width, vf.width)
+                f.origin.x = vf.midX - f.size.width / 2
+                f.origin.y = vf.maxY - f.size.height
+                window.setFrame(f, display: true)
+            }
+            window.makeKeyAndOrderFront(nil)
+        }
     }
 
     @objc private func chooseVideo() {
