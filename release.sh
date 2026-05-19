@@ -154,6 +154,23 @@ cask "driftwall" do
 end
 EOF
 
+# Sparkle appcast — signed with the EdDSA key in the login Keychain.
+# Enclosure URLs point at the v$VER GitHub release assets; output goes
+# to docs/ so GitHub Pages serves it at the Info.plist SUFeedURL.
+if [ -x vendor/bin/generate_appcast ]; then
+  ACSRC=$(mktemp -d)
+  cp "$ZIP" "$ACSRC/"
+  mkdir -p docs
+  vendor/bin/generate_appcast \
+    --download-url-prefix "https://github.com/emerytech/Driftwall/releases/download/v$VER/" \
+    -o docs/appcast.xml \
+    "$ACSRC"
+  rm -rf "$ACSRC"
+  APPCAST="docs/appcast.xml"
+else
+  echo "WARNING: vendor/bin/generate_appcast missing — appcast NOT updated."
+fi
+
 echo
 echo "==> Release $VER ($SIGNED)"
 echo "    $DMG"
@@ -161,7 +178,9 @@ echo "    $ZIP"
 [ -f "$SAVER_ZIP" ] && echo "    $SAVER_ZIP (screen saver)"
 echo "    sha256: $SHA"
 echo "    cask:   $CASK (regenerated)"
+[ -n "${APPCAST:-}" ] && echo "    appcast: $APPCAST (signed — commit + push so Pages serves it)"
 echo
 echo "Next:"
-echo "  gh release create \"v$VER\" \"$DMG\" \"$ZIP\" --title \"Driftwall $VER\""
-echo "  cp \"$CASK\" <homebrew-driftwall checkout>/Casks/ && git -C … commit && push"
+echo "  gh release create \"v$VER\" \"$DMG\" \"$ZIP\" \"$SAVER_ZIP\" --title \"Driftwall $VER\""
+echo "  git add docs/appcast.xml \"$CASK\" && git commit && git push   # Pages serves the appcast"
+echo "  cp \"$CASK\" <homebrew-driftwall checkout>/Casks/ && commit + push the tap"
