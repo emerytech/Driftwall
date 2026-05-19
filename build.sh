@@ -30,6 +30,7 @@ swiftc -O \
   Sources/VideoLibrary.swift \
   Sources/DisplayConfig.swift \
   Sources/ScheduleWindow.swift \
+  Sources/Updater.swift \
   -framework Cocoa -framework AVFoundation -framework AVKit \
   -framework IOKit -framework ServiceManagement \
   -o "$APP/Contents/MacOS/Driftwall"

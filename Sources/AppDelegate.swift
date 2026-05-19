@@ -53,6 +53,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // One-time tip prompt, only once the app has been kept around a
         // while. Deferred so it never collides with onboarding/settings.
         DispatchQueue.main.async { SupportPrompt.maybePromptOnLaunch() }
+
+        // Quiet, throttled "new version available?" check.
+        DispatchQueue.main.async { Updater.checkOnLaunch() }
     }
 
     // Re-launching the app (double-click in Finder / Spotlight) reopens
@@ -182,6 +185,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
 
+        let updates = NSMenuItem(title: "Check for Updates…",
+                                 action: #selector(menuCheckForUpdates), keyEquivalent: "")
+        updates.target = self
+        menu.addItem(updates)
+
         let support = NSMenuItem(title: "Support Driftwall…",
                                  action: #selector(menuSupport), keyEquivalent: "")
         support.target = self
@@ -248,6 +256,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func menuSupport() {
         SupportPrompt.openKofi()
+    }
+
+    @objc private func menuCheckForUpdates() {
+        Updater.check(explicit: true)
     }
 
     @objc private func togglePause() {
