@@ -6,9 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var controller: WallpaperController!
     private var settings: SettingsWindowController!
     private var onboarding: OnboardingWindowController!
-    #if !MAS
     private var sparkle: SparkleUpdater!
-    #endif
     private var statusItem: NSStatusItem?
     private weak var pauseMenuItem: NSMenuItem?
     private weak var batteryMenuItem: NSMenuItem?
@@ -57,11 +55,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // while. Deferred so it never collides with onboarding/settings.
         DispatchQueue.main.async { SupportPrompt.maybePromptOnLaunch() }
 
-        #if !MAS
         // Sparkle: starts its own scheduled background update checks.
-        // (Excluded from the Mac App Store build — MAS forbids self-update.)
         sparkle = SparkleUpdater()
-        #endif
     }
 
     // Re-launching the app (double-click in Finder / Spotlight) reopens
@@ -196,12 +191,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
 
-        #if !MAS
         let updates = NSMenuItem(title: "Check for Updates…",
                                  action: #selector(menuCheckForUpdates), keyEquivalent: "")
         updates.target = self
         menu.addItem(updates)
-        #endif
 
         let support = NSMenuItem(title: "Support Driftwall…",
                                  action: #selector(menuSupport), keyEquivalent: "")
@@ -276,11 +269,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         SupportPrompt.openKofi()
     }
 
-    #if !MAS
     @objc private func menuCheckForUpdates() {
         sparkle.checkForUpdates()
     }
-    #endif
 
     @objc private func togglePause() {
         controller.togglePause()

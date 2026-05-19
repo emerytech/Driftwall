@@ -1,14 +1,12 @@
 # Build output
 Driftwall.app/
 Driftwall.saver/
-Driftwall-MAS.app/
 *.zip
 dist/
 
 # Generated icons (build.sh regenerates from tools/MakeIcons.swift)
 Resources/AppIcon.icns
 Resources/MenuBar.pdf
-Resources/Sample.mp4
 
 # Vendored Sparkle binary + tools (build.sh re-fetches if missing)
 vendor/

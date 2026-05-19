@@ -330,14 +330,7 @@ final class WallpaperController {
         }).first {
             return newest
         }
-        #if MAS
-        // Sandbox can't read ~/Wallpapers; ship a bundled clip so a fresh
-        // App Store install has content immediately (and so the wallpaper
-        // window is testable under the sandbox).
-        return Bundle.main.url(forResource: "Sample", withExtension: "mp4")
-        #else
         return nil
-        #endif
     }
 
     private func videoFiles(in folder: URL?) -> [URL] {
