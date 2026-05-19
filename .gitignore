@@ -8,6 +8,7 @@ dist/
 # Generated icons (build.sh regenerates from tools/MakeIcons.swift)
 Resources/AppIcon.icns
 Resources/MenuBar.pdf
+Resources/Sample.mp4
 
 # Vendored Sparkle binary + tools (build.sh re-fetches if missing)
 vendor/

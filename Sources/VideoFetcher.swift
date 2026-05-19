@@ -69,7 +69,15 @@ final class VideoFetcher {
             if type.hasPrefix("video/") {
                 self.downloadDirect(url, progress: progress, completion: completion)
             } else {
+                #if MAS
+                // App Sandbox forbids spawning yt-dlp. Direct video links
+                // only on the Mac App Store build.
+                self.finish(completion, .failure(FetchError.failed(
+                    "On the App Store version, paste a direct video link "
+                    + "(.mp4/.mov). Page links (YouTube, etc.) aren’t supported.")))
+                #else
                 self.downloadViaYtdlp(trimmed, progress: progress, completion: completion)
+                #endif
             }
         }.resume()
     }
