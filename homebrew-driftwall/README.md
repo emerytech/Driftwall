@@ -16,6 +16,14 @@ If you're installing an **unsigned** build (the source/ad-hoc release rather tha
 brew install --cask --no-quarantine emerytech/driftwall/driftwall
 ```
 
+## Lock screen (optional)
+
+The cask installs the **app**. For lock-screen / login-window playback,
+Driftwall ships a notarized **screen saver**: grab `Driftwall.saver` from
+the [`.dmg` or the releases page](https://github.com/emerytech/Driftwall/releases/latest),
+double-click to install, then pick **Driftwall** in System Settings →
+Screen Saver and set the Lock Screen to start it when inactive.
+
 ## Updating
 
 ```sh

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Driftwall — live video wallpaper for macOS</title>
-<meta name="description" content="Driftwall turns any video into a calm, energy-aware live wallpaper for macOS. Free and open.">
+<meta name="description" content="Driftwall turns any video into a calm, energy-aware live wallpaper — and lock screen — for macOS. Free and open.">
 <style>
   :root{
     --bg:#0b1016; --panel:#121a24; --line:#1e2b3a;
@@ -73,6 +73,7 @@
     <div class="card"><h3>Time-of-day &amp; Dark Mode</h3><p>Schedule different videos through the day, and auto-swap a light/dark variant with macOS appearance.</p></div>
     <div class="card"><h3>Energy aware</h3><p>Pauses on battery, in Low Power Mode, when the screen sleeps, and when a fullscreen app or game covers the display.</p></div>
     <div class="card"><h3>Multi-display</h3><p>Give each monitor its own video or a crossfading playlist folder.</p></div>
+    <div class="card"><h3>Lock screen &amp; login</h3><p>An included, notarized screen saver plays your video on the lock screen and login window too — not just the desktop.</p></div>
     <div class="card"><h3>Automation</h3><p>Drive it from Shortcuts, AppleScript, or the terminal via the <code>driftwall://</code> URL scheme.</p></div>
     <div class="card"><h3>Quiet by design</h3><p>No Dock icon, no account, no telemetry. A tidy menu-bar agent that respects Reduce Motion.</p></div>
   </div>
@@ -99,6 +100,14 @@
   <p style="margin:22px 0 10px"><strong>Build from source</strong></p>
   <pre class="cmd">git clone https://github.com/emerytech/Driftwall.git
 cd Driftwall &amp;&amp; ./build.sh &amp;&amp; open Driftwall.app</pre>
+
+  <p style="margin:26px 0 10px"><strong>Lock screen (optional)</strong></p>
+  <ol>
+    <li>The <code>.dmg</code> includes <strong>Driftwall.saver</strong> (also a separate download on the <a href="https://github.com/emerytech/Driftwall/releases/latest">releases page</a>).</li>
+    <li>Double-click it (or drag into <code>~/Library/Screen Savers</code>) and choose Install.</li>
+    <li>System Settings → <strong>Screen Saver</strong> → pick <strong>Driftwall</strong>, then set <strong>Lock Screen</strong> to start it when inactive.</li>
+  </ol>
+  <p class="muted" style="margin-top:14px">It plays your selected video on the lock screen &amp; login window. The screen saver is notarized; the Homebrew cask installs the app only.</p>
 </section>
 
 <section class="wrap">

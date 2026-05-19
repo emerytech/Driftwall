@@ -5,12 +5,35 @@ cd "$(dirname "$0")"
 # Builds Driftwall.saver (the lock-screen / login-window companion) and,
 # with --install, copies it to ~/Library/Screen Savers/.
 #
-# NOTE: on Apple Silicon the screensaver host (legacyScreenSaver) will
-# refuse to load a saver that isn't Developer ID signed + notarized.
-# Ad-hoc builds are fine to compile but typically won't run until
-# notarize.sh has been used. The cert step is the prerequisite.
+# `--install` installs an EXISTING notarized Driftwall.saver as-is and
+# skips the rebuild — rebuilding would discard the stapled notarization
+# ticket, and on Apple Silicon legacyScreenSaver refuses a saver that
+# isn't Developer ID signed + notarized. Run ./notarize.sh to produce
+# the notarized bundle; then ./build-saver.sh --install.
 
 SAVER="Driftwall.saver"
+INSTALL=0
+[ "${1:-}" = "--install" ] && INSTALL=1
+
+install_saver() {
+  local dest="$HOME/Library/Screen Savers"
+  mkdir -p "$dest"
+  rm -rf "$dest/$SAVER"
+  cp -R "$SAVER" "$dest/"
+  xattr -dr com.apple.quarantine "$dest/$SAVER" 2>/dev/null || true
+  echo "Installed to $dest/$SAVER"
+  echo "Select it in System Settings → Screen Saver (and set the Lock"
+  echo "Screen to use the screen saver)."
+}
+
+# Install the already-notarized bundle without touching it.
+if [ "$INSTALL" = 1 ] && [ -d "$SAVER" ] \
+   && xcrun stapler validate "$SAVER" >/dev/null 2>&1; then
+  echo "Installing existing NOTARIZED $SAVER (not rebuilding)."
+  install_saver
+  exit 0
+fi
+
 rm -rf "$SAVER"
 mkdir -p "$SAVER/Contents/MacOS"
 
@@ -38,15 +61,12 @@ else
   codesign --force --deep --sign - "$SAVER"
 fi
 
-if [ "${1:-}" = "--install" ]; then
-  DEST="$HOME/Library/Screen Savers"
-  mkdir -p "$DEST"
-  rm -rf "$DEST/$SAVER"
-  cp -R "$SAVER" "$DEST/"
-  xattr -dr com.apple.quarantine "$DEST/$SAVER" 2>/dev/null || true
-  echo "Installed to $DEST/$SAVER"
-  echo "Select it in System Settings → Screen Saver (and set the lock"
-  echo "screen to use the screen saver)."
+if [ "$INSTALL" = 1 ]; then
+  if ! xcrun stapler validate "$SAVER" >/dev/null 2>&1; then
+    echo "WARNING: this build is NOT notarized — it likely will not load"
+    echo "on Apple Silicon. Run ./notarize.sh, then ./build-saver.sh --install."
+  fi
+  install_saver
 else
-  echo "Built $SAVER — install with: ./build-saver.sh --install"
+  echo "Built $SAVER — notarize with ./notarize.sh, then ./build-saver.sh --install"
 fi

@@ -67,8 +67,12 @@ fi
 notarize_and_staple() {
   local bundle="$1"
   [ -e "$bundle" ] || { echo "skip: $bundle not found"; return 0; }
-  if ! codesign -dv --verbose=2 "$bundle" 2>&1 \
-       | grep -q "Authority=Developer ID Application"; then
+  # Capture, then test — NOT `codesign | grep -q`, which trips
+  # `set -o pipefail` (grep closes the pipe, codesign SIGPIPEs, the
+  # pipeline reports failure even though the signature is fine).
+  local sig
+  sig=$(codesign -dv --verbose=2 "$bundle" 2>&1 || true)
+  if ! grep -q "Authority=Developer ID Application" <<<"$sig"; then
     echo "ERROR: $bundle is not Developer ID signed."; return 1
   fi
   local zip="${bundle}.notarize.zip"

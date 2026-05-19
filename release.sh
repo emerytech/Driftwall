@@ -143,7 +143,7 @@ cask "driftwall" do
 
   url "https://github.com/emerytech/Driftwall/releases/download/v#{version}/Driftwall-#{version}.zip"
   name "Driftwall"
-  desc "Video wallpaper for macOS"
+  desc "Live video wallpaper and lock-screen screen saver for macOS"
   homepage "https://github.com/emerytech/Driftwall"
 
   app "Driftwall.app"
