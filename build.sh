@@ -44,6 +44,7 @@ swiftc -O \
   Sources/ScheduleWindow.swift \
   Sources/SparkleUpdater.swift \
   Sources/LockScreenMatch.swift \
+  Sources/AppleAerials.swift \
   -F "$ROOT/vendor" -framework Sparkle \
   -framework Cocoa -framework AVFoundation -framework AVKit \
   -framework IOKit -framework ServiceManagement \

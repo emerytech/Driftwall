@@ -159,6 +159,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         disp.target = self
         menu.addItem(disp)
 
+        let aerials = NSMenuItem(title: "Apple Aerials…",
+                                 action: #selector(menuAppleAerials), keyEquivalent: "")
+        aerials.target = self
+        menu.addItem(aerials)
+
         let sched = NSMenuItem(title: "Schedule…",
                                action: #selector(menuSchedule), keyEquivalent: "")
         sched.target = self
@@ -248,6 +253,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func menuDisplays() {
         settings.show()
         settings.openDisplaysWindow()
+    }
+
+    @objc private func menuAppleAerials() {
+        settings.show()
+        settings.openAppleAerialsWindow()
     }
 
     @objc private func menuSchedule() {

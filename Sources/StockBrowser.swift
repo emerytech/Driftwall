@@ -6,11 +6,13 @@ enum StockSource: Int {
     case pexels = 0
     case coverr = 1
     case pixabay = 2
+    case nasa = 3
     var label: String {
         switch self {
         case .pexels:  return "Pexels"
         case .coverr:  return "Coverr"
         case .pixabay: return "Pixabay"
+        case .nasa:    return "NASA"
         }
     }
 }
@@ -274,6 +276,68 @@ enum PixabayProvider {
     }
 }
 
+/// NASA Images & Video Library — public domain, NO API key. Search
+/// returns items; the playable mp4 lives in each item's collection.json,
+/// fetched per result. Empty query → "earth".
+enum NasaProvider {
+    static func load(query: String?, key: String, res: ResFilter, page: Int,
+                     completion: @escaping (Result<[StockVideo], Error>) -> Void) {
+        var comps = URLComponents(string: "https://images-api.nasa.gov/search")!
+        comps.queryItems = [
+            .init(name: "q", value: (query?.isEmpty ?? true) ? "earth" : query),
+            .init(name: "media_type", value: "video"),
+            .init(name: "page", value: String(max(1, page))),
+        ]
+        URLSession.shared.dataTask(with: comps.url!) { data, resp, err in
+            if let err = err { return PexelsProvider.main(completion, .failure(err)) }
+            if let code = (resp as? HTTPURLResponse)?.statusCode, code != 200 {
+                return PexelsProvider.main(completion, .failure(StockError.http("NASA", code)))
+            }
+            guard let data = data,
+                  let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let coll = root["collection"] as? [String: Any],
+                  let items = coll["items"] as? [[String: Any]]
+            else { return PexelsProvider.main(completion, .failure(StockError.badResponse("NASA"))) }
+
+            let group = DispatchGroup()
+            let lock = NSLock()
+            var results: [StockVideo] = []
+
+            for item in items {
+                guard let metas = item["data"] as? [[String: Any]],
+                      let meta = metas.first,
+                      let title = meta["title"] as? String,
+                      let id = meta["nasa_id"] as? String,
+                      let hrefStr = item["href"] as? String,
+                      let collURL = URL(string: hrefStr) else { continue }
+                let thumb = ((item["links"] as? [[String: Any]])?
+                    .first?["href"] as? String).flatMap { URL(string: $0) }
+
+                group.enter()
+                URLSession.shared.dataTask(with: collURL) { d, _, _ in
+                    defer { group.leave() }
+                    guard let d,
+                          let files = (try? JSONSerialization.jsonObject(with: d)) as? [String]
+                    else { return }
+                    let mp4s = files.filter { $0.lowercased().hasSuffix(".mp4") }
+                    let pick = mp4s.first { $0.contains("~orig") }
+                            ?? mp4s.first { $0.contains("~large") }
+                            ?? mp4s.first { $0.contains("mobile") }
+                            ?? mp4s.first
+                    guard let pick, let mp4 = URL(string: pick) else { return }
+                    let v = StockVideo(id: id, title: title,
+                                       thumb: thumb ?? mp4, mp4: mp4,
+                                       width: 0, height: 0, seconds: 0)
+                    lock.lock(); results.append(v); lock.unlock()
+                }.resume()
+            }
+            group.notify(queue: .global()) {
+                PexelsProvider.main(completion, .success(results))
+            }
+        }.resume()
+    }
+}
+
 /// Reused looping video preview window.
 final class PreviewController: NSObject, NSWindowDelegate {
     private var window: NSWindow?
@@ -331,7 +395,7 @@ final class StockBrowserWindowController: NSWindowController, NSSearchFieldDeleg
     var onPick: (URL) -> Void = { _ in }
 
     private let providerControl = NSSegmentedControl(
-        labels: ["Pexels", "Coverr", "Pixabay"], trackingMode: .selectOne,
+        labels: ["Pexels", "Coverr", "Pixabay", "NASA"], trackingMode: .selectOne,
         target: nil, action: nil)
     private let resolutionPopup = NSPopUpButton(frame: .zero, pullsDown: false)
     private let sortPopup = NSPopUpButton(frame: .zero, pullsDown: false)
@@ -514,6 +578,8 @@ final class StockBrowserWindowController: NSWindowController, NSSearchFieldDeleg
                                           page: requested, completion: handler)
         case .pixabay: PixabayProvider.load(query: query, key: keyFor(.pixabay), res: res,
                                             page: requested, completion: handler)
+        case .nasa: NasaProvider.load(query: query, key: "", res: res,
+                                      page: requested, completion: handler)
         }
     }
 

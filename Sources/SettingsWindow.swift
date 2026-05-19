@@ -45,6 +45,7 @@ final class SettingsWindowController: NSWindowController {
     private let stockBrowser = StockBrowserWindowController()
     private var library: LibraryWindowController!
     private var displayConfig: DisplayConfigWindowController!
+    private var appleAerials: AppleAerialsWindowController!
     private var scheduleConfig: ScheduleWindowController!
     private static let pexelsKeyDefault = "DriftwallPexelsKey"
     private static let coverrKeyDefault = "DriftwallCoverrKey"
@@ -68,6 +69,8 @@ final class SettingsWindowController: NSWindowController {
         library.onChange = { [weak self] in self?.refresh() }
         displayConfig = DisplayConfigWindowController(controller: controller)
         displayConfig.onChange = { [weak self] in self?.refresh() }
+        appleAerials = AppleAerialsWindowController(controller: controller)
+        appleAerials.onChange = { [weak self] in self?.refresh() }
         scheduleConfig = ScheduleWindowController(controller: controller)
         scheduleConfig.onChange = { [weak self] in self?.refresh() }
         buildUI()
@@ -201,6 +204,8 @@ final class SettingsWindowController: NSWindowController {
             NSButton(title: "Schedule…", target: self, action: #selector(openSchedule)))
         sourceButtons.addArrangedSubview(
             NSButton(title: "Browse Stock…", target: self, action: #selector(openStock)))
+        sourceButtons.addArrangedSubview(
+            NSButton(title: "Apple Aerials…", target: self, action: #selector(openAppleAerials)))
         stack.addArrangedSubview(sourceButtons)
 
         let keyRow = NSStackView()
@@ -247,6 +252,7 @@ final class SettingsWindowController: NSWindowController {
             case .pexels:  key = Self.pexelsKeyDefault
             case .coverr:  key = Self.coverrKeyDefault
             case .pixabay: key = Self.pixabayKeyDefault
+            case .nasa:    return ""   // keyless
             }
             return UserDefaults.standard.string(forKey: key) ?? ""
         }
@@ -545,6 +551,12 @@ final class SettingsWindowController: NSWindowController {
     }
 
     func openDisplaysWindow() { openDisplays() }
+
+    @objc private func openAppleAerials() {
+        appleAerials.show()
+    }
+
+    func openAppleAerialsWindow() { openAppleAerials() }
 
     @objc private func openSchedule() {
         scheduleConfig.show()
