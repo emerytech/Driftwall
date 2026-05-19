@@ -104,18 +104,28 @@ if [ "$NOTARIZE" != "0" ] && have_devid && have_notary_creds; then
 else
   echo "==> No Developer ID/notary creds — ad-hoc build (Gatekeeper prompt)."
   ./build.sh
+  ./build-saver.sh
   SIGNED="adhoc"
 fi
+SAVER="Driftwall.saver"
+SAVER_ZIP="$OUT/Driftwall-$VER-ScreenSaver.zip"
 
 mkdir -p "$OUT"
-rm -f "$DMG" "$ZIP"
+rm -f "$DMG" "$ZIP" "$SAVER_ZIP"
 
 # .zip — what the Homebrew cask downloads.
 ditto -c -k --keepParent "$APP" "$ZIP"
 
+# Screen saver — shipped as its own zip (the cask installs the app; the
+# saver is an optional drag-to-install extra, also placed in the .dmg).
+if [ -d "$SAVER" ]; then
+  ditto -c -k --keepParent "$SAVER" "$SAVER_ZIP"
+fi
+
 # .dmg — drag-to-Applications window for the website download.
 STAGE=$(mktemp -d)
 cp -R "$APP" "$STAGE/"
+[ -d "$SAVER" ] && cp -R "$SAVER" "$STAGE/"
 ln -s /Applications "$STAGE/Applications"
 hdiutil create -volname "Driftwall" -srcfolder "$STAGE" \
   -ov -format UDZO "$DMG" >/dev/null
@@ -148,6 +158,7 @@ echo
 echo "==> Release $VER ($SIGNED)"
 echo "    $DMG"
 echo "    $ZIP"
+[ -f "$SAVER_ZIP" ] && echo "    $SAVER_ZIP (screen saver)"
 echo "    sha256: $SHA"
 echo "    cask:   $CASK (regenerated)"
 echo
