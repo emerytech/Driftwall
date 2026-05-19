@@ -1,6 +1,6 @@
 cask "driftwall" do
-  version "0.1.4"
-  sha256 "854ab6e06c5bcd84dec4bede64f2b97ca1241ca7a7874caabd983ce829edd595"
+  version "0.1.5"
+  sha256 "7450f6a886c975a99b0305d25b452e6498fc0ee7701723dc933a1d17d09e9606"
 
   url "https://github.com/emerytech/Driftwall/releases/download/v#{version}/Driftwall-#{version}.zip"
   name "Driftwall"

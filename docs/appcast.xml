@@ -3,6 +3,15 @@
     <channel>
         <title>Driftwall</title>
         <item>
+            <title>0.1.5</title>
+            <pubDate>Tue, 19 May 2026 06:50:29 -0500</pubDate>
+            <sparkle:version>6</sparkle:version>
+            <sparkle:shortVersionString>0.1.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/emerytech/Driftwall/releases/download/v0.1.5/Driftwall-0.1.5.zip" length="1495651" type="application/octet-stream" sparkle:edSignature="jt66HzO3kgu+L16OuC15CLJyh/QuEkYnJ08v0Mr8C8VmFt0Ps1rnjomkzzzW1cvX+Cte6CkFiNiJBN392rafCw=="/>
+        </item>
+        <item>
             <title>0.1.4</title>
             <pubDate>Tue, 19 May 2026 01:20:04 -0500</pubDate>
             <sparkle:version>5</sparkle:version>
@@ -19,15 +28,6 @@
             <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <enclosure url="https://github.com/emerytech/Driftwall/releases/download/v0.1.3/Driftwall-0.1.3.zip" length="1470400" type="application/octet-stream" sparkle:edSignature="g9sL+hmDVNV4PVr3S6Gj/Lt3gZuCpxMoAb+w4YI30yKfBBj2ZfxU6MgcESX5IE1OatNwRfvSJEEaL16ZuEWPBw=="/>
-        </item>
-        <item>
-            <title>0.1.2</title>
-            <pubDate>Tue, 19 May 2026 00:32:02 -0500</pubDate>
-            <sparkle:version>3</sparkle:version>
-            <sparkle:shortVersionString>0.1.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/emerytech/Driftwall/releases/download/v0.1.2/Driftwall-0.1.2.zip" length="1469602" type="application/octet-stream" sparkle:edSignature="qPe70clQ95tIflelXY+bQoXgtduFdolL8vWJRcRc6Dexp0qEQsT/EKsuK/0btunOMNNgsh0jTjx1Txvrku+qCg=="/>
         </item>
     </channel>
 </rss>
