@@ -1,10 +1,10 @@
 cask "driftwall" do
-  version "0.1.0"
-  sha256 "57e87aef239c7905327314f230fcdd693615c28041f8089cc17c921856725922"
+  version "0.1.1"
+  sha256 "2aa2465b9cd3ab0a050315ba857102d9bdb14043c76f39dc6b19ef68b5c4b167"
 
   url "https://github.com/emerytech/Driftwall/releases/download/v#{version}/Driftwall-#{version}.zip"
   name "Driftwall"
-  desc "Video wallpaper for macOS"
+  desc "Live video wallpaper and lock-screen screen saver for macOS"
   homepage "https://github.com/emerytech/Driftwall"
 
   app "Driftwall.app"
