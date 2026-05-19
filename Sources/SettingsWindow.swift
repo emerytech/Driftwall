@@ -322,6 +322,10 @@ final class SettingsWindowController: NSWindowController {
         appearanceRow.addArrangedSubview(appearanceControl)
         stack.addArrangedSubview(appearanceRow)
 
+        stack.addArrangedSubview(
+            NSButton(title: "Set Up Lock Screen…",
+                     target: self, action: #selector(setUpLockScreen)))
+
         stack.addArrangedSubview(separator())
 
         let bottom = NSStackView()
@@ -404,6 +408,46 @@ final class SettingsWindowController: NSWindowController {
 
     @objc private func appearanceChanged() {
         Appearance.mode = (appearanceControl.selectedSegment == 0) ? .glass : .classic
+    }
+
+    /// Opens the two System Settings panes and shows the two manual steps.
+    /// macOS gives no API to select a screen saver or set the idle delay,
+    /// so this removes the hunting but the final picks are unavoidable.
+    @objc private func setUpLockScreen() {
+        let saver = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Screen Savers/Driftwall.saver")
+        let installed = FileManager.default.fileExists(atPath: saver.path)
+
+        NSWorkspace.shared.open(URL(string:
+            "x-apple.systempreferences:com.apple.ScreenSaver-Settings.extension")!)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            NSWorkspace.shared.open(URL(string:
+                "x-apple.systempreferences:com.apple.Lock-Screen-Settings.extension")!)
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Set Driftwall as your lock-screen saver"
+        if installed {
+            alert.informativeText = """
+            Two quick picks (macOS has no API to do this automatically):
+
+            1. Screen Saver → select Driftwall.
+            2. Lock Screen → "Start Screen Saver when inactive" → 1 minute.
+
+            Lock the Mac and wait that interval — Driftwall plays on the \
+            lock screen and the login window.
+            """
+        } else {
+            alert.informativeText = """
+            The Driftwall screen saver isn't installed yet. Open the \
+            Driftwall .dmg and double-click Driftwall.saver (or run \
+            ./build-saver.sh --install), then come back and:
+
+            1. Screen Saver → select Driftwall.
+            2. Lock Screen → "Start Screen Saver when inactive" → 1 minute.
+            """
+        }
+        alert.runModal()
     }
 
     func show() {
