@@ -31,6 +31,10 @@ if [ ! -f Resources/AppIcon.icns ] || [ ! -f Resources/MenuBar.pdf ]; then
   mkdir -p Resources
   swift tools/MakeIcons.swift Resources
 fi
+# Bundled zero-config sample clip (license-free, generated).
+if [ ! -f Resources/Sample.mp4 ]; then
+  swift tools/MakeSample.swift Resources/Sample.mp4
+fi
 
 # Compile with -D MAS, WITHOUT Sources/SparkleUpdater.swift / Sparkle.
 swiftc -O -D MAS \
@@ -66,6 +70,7 @@ done
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp Resources/MenuBar.pdf  "$APP/Contents/Resources/MenuBar.pdf"
+cp Resources/Sample.mp4   "$APP/Contents/Resources/Sample.mp4"
 
 dist_id=$(security find-identity -v -p codesigning 2>/dev/null \
             | grep -o '"Apple Distribution:[^"]*"' | head -1 | tr -d '"' || true)
