@@ -42,6 +42,7 @@ final class WallpaperController {
         static let fullscreen = "DriftwallPauseOnFullscreen"
         static let displays = "DriftwallDisplayMap"
         static let schedule = "DriftwallSchedule"
+        static let matchLock = "DriftwallMatchLockScreen"
     }
 
     private static let videoExts: Set<String> = ["mp4", "mov", "m4v", "webm", "mkv", "avi"]
@@ -75,6 +76,12 @@ final class WallpaperController {
     }
     var muted: Bool {
         didSet { UserDefaults.standard.set(muted, forKey: Key.muted); views.forEach { $0.muted = muted } }
+    }
+    var matchLockScreen: Bool {
+        didSet {
+            UserDefaults.standard.set(matchLockScreen, forKey: Key.matchLock)
+            LockScreenMatch.set(enabled: matchLockScreen, video: lockScreenSource())
+        }
     }
     var shuffle: Bool {
         didSet {
@@ -132,6 +139,7 @@ final class WallpaperController {
         fill = d.bool(forKey: Key.fill)
         speed = d.double(forKey: Key.speed)
         muted = d.bool(forKey: Key.muted)
+        matchLockScreen = d.bool(forKey: Key.matchLock)
         shuffle = d.bool(forKey: Key.shuffle)
         crossfade = d.double(forKey: Key.crossfade)
         clipMax = d.double(forKey: Key.clipMax)
@@ -374,6 +382,16 @@ final class WallpaperController {
             } else {
                 loadGlobal(into: view)   // per-display file went missing
             }
+        }
+        LockScreenMatch.refresh(video: lockScreenSource(), enabled: matchLockScreen)
+    }
+
+    /// The video a lock-screen still is grabbed from.
+    private func lockScreenSource() -> URL? {
+        switch sourceMode {
+        case .single:   return resolvedSingleURL()
+        case .playlist: return videoFiles(in: playlistFolder).first
+        case .schedule: return resolvedSingleURL() ?? videoFiles(in: playlistFolder).first
         }
     }
 

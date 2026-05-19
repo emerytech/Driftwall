@@ -31,6 +31,7 @@ final class SettingsWindowController: NSWindowController {
     private let lowPowerCheck = NSButton(checkboxWithTitle: "Pause in Low Power Mode", target: nil, action: nil)
     private let reduceMotionCheck = NSButton(checkboxWithTitle: "Respect Reduce Motion", target: nil, action: nil)
     private let fullscreenCheck = NSButton(checkboxWithTitle: "Pause when an app is fullscreen", target: nil, action: nil)
+    private let matchLockCheck = NSButton(checkboxWithTitle: "Match lock screen to current video", target: nil, action: nil)
     private let loginCheck = NSButton(checkboxWithTitle: "Launch at login", target: nil, action: nil)
     private let menuBarCheck = NSButton(checkboxWithTitle: "Show menu-bar icon", target: nil, action: nil)
     private let appearanceControl = NSSegmentedControl(
@@ -322,6 +323,10 @@ final class SettingsWindowController: NSWindowController {
         appearanceRow.addArrangedSubview(appearanceControl)
         stack.addArrangedSubview(appearanceRow)
 
+        matchLockCheck.target = self
+        matchLockCheck.action = #selector(toggleMatchLock)
+        stack.addArrangedSubview(matchLockCheck)
+
         stack.addArrangedSubview(
             NSButton(title: "Set Up Lock Screen…",
                      target: self, action: #selector(setUpLockScreen)))
@@ -401,6 +406,7 @@ final class SettingsWindowController: NSWindowController {
         lowPowerCheck.state = controller.pauseOnLowPower ? .on : .off
         reduceMotionCheck.state = controller.respectReduceMotion ? .on : .off
         fullscreenCheck.state = controller.pauseOnFullscreen ? .on : .off
+        matchLockCheck.state = controller.matchLockScreen ? .on : .off
         loginCheck.state = (SMAppService.mainApp.status == .enabled) ? .on : .off
         menuBarCheck.state = menuBarIsOn() ? .on : .off
         appearanceControl.selectedSegment = (Appearance.mode == .glass) ? 0 : 1
@@ -408,6 +414,10 @@ final class SettingsWindowController: NSWindowController {
 
     @objc private func appearanceChanged() {
         Appearance.mode = (appearanceControl.selectedSegment == 0) ? .glass : .classic
+    }
+
+    @objc private func toggleMatchLock() {
+        controller.matchLockScreen = (matchLockCheck.state == .on)
     }
 
     /// Opens the two System Settings panes and shows the two manual steps.
