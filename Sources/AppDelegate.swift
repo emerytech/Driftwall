@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var controller: WallpaperController!
     private var settings: SettingsWindowController!
     private var onboarding: OnboardingWindowController!
+    private var sparkle: SparkleUpdater!
     private var statusItem: NSStatusItem?
     private weak var pauseMenuItem: NSMenuItem?
     private weak var batteryMenuItem: NSMenuItem?
@@ -54,8 +55,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // while. Deferred so it never collides with onboarding/settings.
         DispatchQueue.main.async { SupportPrompt.maybePromptOnLaunch() }
 
-        // Quiet, throttled "new version available?" check.
-        DispatchQueue.main.async { Updater.checkOnLaunch() }
+        // Sparkle: starts its own scheduled background update checks.
+        sparkle = SparkleUpdater()
     }
 
     // Re-launching the app (double-click in Finder / Spotlight) reopens
@@ -259,7 +260,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func menuCheckForUpdates() {
-        Updater.check(explicit: true)
+        sparkle.checkForUpdates()
     }
 
     @objc private func togglePause() {

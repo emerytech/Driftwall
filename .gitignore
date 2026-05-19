@@ -8,6 +8,9 @@ dist/
 Resources/AppIcon.icns
 Resources/MenuBar.pdf
 
+# Vendored Sparkle binary + tools (build.sh re-fetches if missing)
+vendor/
+
 # Local, untracked signing/notarization config (never commit)
 config.local.sh
 

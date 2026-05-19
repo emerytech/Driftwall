@@ -1,15 +1,27 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")"
+ROOT="$PWD"
 
 APP="Driftwall.app"
+SPARKLE_VER="2.9.2"
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
 
 # Generate icons on first build (or after `rm -rf Resources`).
 if [ ! -f Resources/AppIcon.icns ] || [ ! -f Resources/MenuBar.pdf ]; then
   mkdir -p Resources
   swift tools/MakeIcons.swift Resources
+fi
+
+# Vendor Sparkle if missing (gitignored; re-fetched here).
+if [ ! -d vendor/Sparkle.framework ]; then
+  echo "Fetching Sparkle $SPARKLE_VER…"
+  mkdir -p vendor
+  curl -fsSL "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VER/Sparkle-$SPARKLE_VER.tar.xz" \
+    -o vendor/sparkle.tar.xz
+  tar -C vendor -xJf vendor/sparkle.tar.xz
+  rm -f vendor/sparkle.tar.xz
 fi
 
 swiftc -O \
@@ -30,39 +42,47 @@ swiftc -O \
   Sources/VideoLibrary.swift \
   Sources/DisplayConfig.swift \
   Sources/ScheduleWindow.swift \
-  Sources/Updater.swift \
+  Sources/SparkleUpdater.swift \
+  -F "$ROOT/vendor" -framework Sparkle \
   -framework Cocoa -framework AVFoundation -framework AVKit \
   -framework IOKit -framework ServiceManagement \
+  -Xlinker -rpath -Xlinker @executable_path/../Frameworks \
   -o "$APP/Contents/MacOS/Driftwall"
 
 cp Info.plist "$APP/Contents/Info.plist"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp Resources/MenuBar.pdf "$APP/Contents/Resources/MenuBar.pdf"
 
-# Signing preference:
-#   1. Developer ID  → Hardened Runtime + timestamp (notarizable).
-#   2. "Driftwall Self-Signed" → stable identified signer (run
-#      tools/make-signing-cert.sh once). Beats anonymous ad-hoc, which
-#      XProtect false-flags as malware for a helper-spawning agent.
-#   3. ad-hoc fallback.
-sign() {
-  local id
-  if id=$(security find-identity -v -p codesigning 2>/dev/null \
-            | grep -o '"Developer ID Application:[^"]*"' | head -1 | tr -d '"'); \
-     [ -n "$id" ]; then
-    echo "Signing with: $id (Developer ID — notarizable)"
-    codesign --force --deep --options runtime --timestamp --sign "$id" "$APP"
-  elif security find-identity -v -p codesigning 2>/dev/null \
-         | grep -q "Driftwall Self-Signed"; then
-    echo "Signing with: Driftwall Self-Signed (stable local identity)"
-    codesign --force --deep --sign "Driftwall Self-Signed" "$APP"
-  else
-    echo "No signing cert — ad-hoc. Run tools/make-signing-cert.sh to"
-    echo "create a stable self-signed identity (recommended)."
-    codesign --force --deep --sign - "$APP"
-  fi
-}
-sign
+cp -R vendor/Sparkle.framework "$APP/Contents/Frameworks/Sparkle.framework"
+
+# Signing preference: Developer ID (notarizable) → self-signed → ad-hoc.
+# Sparkle's prebuilt framework is signed by the Sparkle team, so Hardened
+# Runtime's Library Validation refuses to load it. It must be RE-SIGNED
+# with our identity, inside-out, before the app (no --deep so each nested
+# Mach-O gets a correct, individually valid signature).
+RUNTIME=()
+if ID=$(security find-identity -v -p codesigning 2>/dev/null \
+          | grep -o '"Developer ID Application:[^"]*"' | head -1 | tr -d '"'); \
+   [ -n "$ID" ]; then
+  echo "Signing with: $ID (Developer ID — notarizable)"
+  RUNTIME=(--options runtime --timestamp)
+elif security find-identity -v -p codesigning 2>/dev/null \
+       | grep -q "Driftwall Self-Signed"; then
+  ID="Driftwall Self-Signed"
+  echo "Signing with: Driftwall Self-Signed (stable local identity)"
+else
+  ID="-"
+  echo "No signing cert — ad-hoc (Sparkle updates need Developer ID)."
+fi
+
+FW="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
+csign() { codesign --force "${RUNTIME[@]}" --sign "$ID" "$@"; }
+csign "$FW/XPCServices/Installer.xpc"
+csign "$FW/XPCServices/Downloader.xpc"
+csign "$FW/Updater.app"
+csign "$FW/Autoupdate"
+csign "$APP/Contents/Frameworks/Sparkle.framework"
+csign "$APP"
 
 # Locally built bundles shouldn't carry quarantine, but strip it defensively
 # so Gatekeeper never gets a reason to intercept on launch.
