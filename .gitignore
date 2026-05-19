@@ -1,6 +1,7 @@
 # Build output
 Driftwall.app/
 Driftwall.saver/
+Driftwall-MAS.app/
 *.zip
 dist/
 
